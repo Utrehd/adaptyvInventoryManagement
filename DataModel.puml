@@ -7,7 +7,13 @@ skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 skinparam packageStyle folder
 top to bottom direction
-
+skinparam shadowing false
+skinparam nodesep 80
+skinparam ranksep 80
+skinparam padding 2
+skinparam packagePadding 24
+skinparam ArrowColor #002457
+skinparam ArrowThickness 3
 
 package "Storing" #EEF6FF {
     entity StorageLocation #8ba7e2 {

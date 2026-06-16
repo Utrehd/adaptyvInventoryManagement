@@ -72,6 +72,11 @@ package "Recipes" #FFF7ED {
 }
 
 package "Workflow Execution" #ffcfbb {
+  entity Customer #fdb294 {
+    External customer that owns
+    one or more lab projects.
+  }
+
   entity Project #fdb294{
     Customer or lab project that owns experiments
     and project-specific materials.
@@ -89,8 +94,8 @@ package "Workflow Execution" #ffcfbb {
 
   entity WorkflowStepRun #fdb294 {
     Actual execution of a RecipeStep.
-    Consumes or creates real inventory
-    through InventoryTransactions.
+    Causes InventoryEvents that consume or create
+    real inventory through InventoryTransactions.
   }
 }
 
@@ -103,6 +108,11 @@ package "Inventory" #f7d6fd {
     Type-specific details for a material, 
     such as DNA sequence, protein target, 
     buffer recipe, or supplier SKU.
+  }
+  entity InventoryEvent #f2c6fa {
+    Represents one real-world inventory action.
+    Groups one or more InventoryTransactions
+    under a single cause.
   }
   entity InventoryLot #f2c6fa {
     One physically tracked quantity of a Material.
@@ -136,13 +146,16 @@ Project ||--o{ InventoryLot
 Experiment ||--o{ WorkflowRun : runs
 Recipe ||--o{ WorkflowRun : executed as
 
+Customer ||--o{ Project
 WorkflowRun ||--|{ WorkflowStepRun : contains
 RecipeStep ||--o{ WorkflowStepRun : executed as
 
 Material ||--o{ MaterialMetadata
 Material ||--o{ InventoryLot
 
+InventoryEvent ||--o{ InventoryTransaction : contains
 InventoryLot ||--o{ InventoryTransaction
+InventoryReservation ||--o{ InventoryTransaction : fulfilled by
 InventoryLot ||--o{ InventoryReservation
 InventoryLot ||--o{ InventoryLot : derived_from
 
@@ -152,11 +165,12 @@ Container ||--|{ ContainerPosition
 ContainerPosition ||--o| InventoryLot : holds
 
 WorkflowStepRun ||--o{ InventoryReservation : reserves stock
+WorkflowStepRun ||--o{ InventoryEvent : causes
 InventoryLot ||--o{ InventoryReservation : reserved quantity
 
 Supplier ||--o{ PurchaseOrder
 PurchaseOrder ||--o{ PurchaseOrderLine
 Material ||--o{ PurchaseOrderLine
-PurchaseOrderLine ||--o{ InventoryLot
+PurchaseOrderLine ||--o{ InventoryEvent
 
 @enduml

@@ -1,103 +1,10 @@
-# Inventory Management — Project Goal
+# Inventory Management — Project Adaptivy
 
-## Goal
+## Assumptions
+- The system is the operational source of truth for current inventory state, but not for supplier management, purchasing approvals, or finance workflows.
+- Integrations with LIMS, ELN, robotics, or procurement systems are out of scope.
+- The system should be designed to be GxP-ready if Adaptyv later offers it in a regulated setting. Thus, the design should not block future support for auditability, traceability, controlled changes, user accountability, record integrity, electronic records, and validation-oriented workflows required under frameworks such as FDA, EU GMP, GLP, GCP, and related standards.
 
-Design a practical inventory management system for a high-throughput protein characterization lab.
-
-The system should help the lab understand what materials are available, where they are stored, whether they are still usable, and whether planned lab work can be completed with the current stock.
-
-This is not just a stock-counting problem. The lab uses different material types in different ways. Some materials are ordered, some are produced in-house, some expire quickly, some last for years, and some can be reused across projects. The goal is to model those differences clearly enough that engineers can build reliable workflows on top of it.
-
-## Objectives
-
-| ID | Objective | Why It Matters | Success Looks Like |
-|---|---|---|---|
-| OBJ-01 | Track usable and available inventory across all material types. | The lab needs a clear view of what exists, what is usable, what is already reserved for planned work, and what is still free to use. | A user can see current quantity, free quantity, reserved quantity, unit, concentration, material type, project link, and status. |
-| OBJ-02 | Model material-specific behavior. | DNA, samples, target proteins, buffers, consumables, and other materials have different lifecycles. | The system supports ordered, produced, reusable, single-use, expiring, and non-expiring materials without hiding important differences. |
-| OBJ-03 | Track physical storage location. | Inventory is only useful if people can find the material in the lab. | A user can locate stock down to freezer, shelf, rack, plate, tube, or well where needed. |
-| OBJ-04 | Record inventory movement and consumption. | Lab workflows partially consume, create, transfer, reserve, release, and discard materials. | Each inventory change records what changed, how much, from where, why, for which workflow step, and when. |
-| OBJ-05 | Check if planned lab work can be completed. | The lab needs to know before starting whether enough usable and unreserved stock exists, including possible QC re-runs, while still allowing reusable materials to be shared when enough quantity remains. | The system can answer whether a planned task or experiment has enough viable material available without double-booking the same reserved quantity. |
-| OBJ-06 | Expose practical APIs for lab operations. | The frontend and other services need domain-level answers, not only raw database records. | API calls support inventory lookup, material location, expiry checks, feasibility checks, reservations, receiving stock, and recording consumption. |
-
-## User Requirements
-
-| ID | Linked Objective | User Requirement | Reason |
-|---|---|---|---|
-| UR-01 | OBJ-01 | As a lab operator, I need to see the current stock for each material, so I know what physically exists in the lab. | Daily lab work depends on knowing what inventory exists. |
-| UR-02 | OBJ-01 | As a lab planner, I need to see how much material is free versus reserved for planned or active processes. | Material that exists physically may not be available for new work. |
-| UR-03 | OBJ-01 | As a lab operator, I need inventory status to show whether material is usable, reserved, depleted, expired, or discarded. | Quantity alone is not enough to know if material can be used. |
-| UR-04 | OBJ-02 | As a lab operator, I need DNA, samples, target proteins, buffers, consumables, and other materials to be represented with their relevant properties. | Each material type has different rules for use, expiry, storage, and reuse. |
-| UR-05 | OBJ-02 | As a lab planner, I need reusable materials, especially target proteins, to show remaining usable, reserved, and free stock across projects. | Expensive shared materials should not be reordered when enough stock already exists or can still be shared safely. |
-| UR-06 | OBJ-02 / OBJ-05 | As a lab planner, I need target proteins to be shareable across projects when there is enough usable stock after existing reservations. | Target proteins are expensive and often relevant to multiple projects, so the system should avoid unnecessary reordering. |
-| UR-07 | OBJ-02 / OBJ-05 | As a lab planner, I need reservations to reserve only the required quantity, not block the entire target protein stock item by default. | A reserved target protein tube may still contain enough remaining volume for another project. |
-| UR-08 | OBJ-03 | As a lab operator, I need to see where a material is physically stored. | Finding the correct material quickly matters as lab volume grows. |
-| UR-09 | OBJ-03 | As a lab operator, I need storage to support nested locations such as freezer, shelf, rack, plate, tube, and well. | Lab materials are often stored at different physical levels of precision. |
-| UR-10 | OBJ-04 | As a lab operator, I need every inventory change to be recorded as a movement, creation, transfer, reservation, release, consumption, discard, or adjustment. | Inventory should be auditable and not only reflect the latest number. |
-| UR-11 | OBJ-04 | As a lab operator, I need partial consumption to be supported. | Many workflow steps use only part of a plate well, tube, or buffer volume. |
-| UR-12 | OBJ-04 | As a lab operator, I need reservations to be released, consumed, or adjusted when the related workflow step is completed, cancelled, or changed. | Reserved stock should stay accurate as lab plans change. |
-| UR-13 | OBJ-04 | As a lab operator, I need inventory changes to be linked to the workflow step, experiment, material, source location, quantity, and timestamp. | This explains why stock changed and connects inventory to lab execution. |
-| UR-14 | OBJ-05 | As a lab planner, I need to check whether a planned task has enough viable and unreserved materials before the task starts. | Missing stock should be found before lab time is committed. |
-| UR-15 | OBJ-05 | As a lab planner, I need feasibility checks to include expected QC re-runs where relevant. | Failed QC can require repeating steps and consuming more material. |
-| UR-16 | OBJ-05 | As a lab planner, I need the system to show which material blocks a task if stock is missing, reserved, or expired. | The user needs an actionable reason, not only a failed check. |
-| UR-17 | OBJ-06 | As a frontend user, I need APIs that answer inventory questions directly. | The frontend should not rebuild lab logic from raw database tables. |
-| UR-18 | OBJ-06 | As another lab service, I need APIs to receive stock, reserve material, release reservations, record consumption, locate materials, and check task feasibility. | Inventory will likely be used by workflow and automation systems, not only humans. |
-
-ChatGPT
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Thought for a second
-Yes. Add it, but I would not make it a separate objective unless reservation is central to the system.
-
-Better: fold it into OBJ-01 and OBJ-05.
-
-Updated Objective
-| OBJ-01 | Track usable and available inventory across all material types. | The lab needs a clear view of what exists, what is usable, what is already reserved for planned work, and what is still free to use. | A user can see current quantity, free quantity, reserved quantity, unit, concentration, material type, project link, and status. |
-Add / adjust user requirements
-| UR-03 | OBJ-01 | As a lab planner, I need to see how much material is free versus reserved for planned or active processes. | Material that exists physically may not be available for new work. |
-| UR-04 | OBJ-01 / OBJ-05 | As a lab planner, I need feasibility checks to consider only usable and unreserved stock unless explicitly allowed. | Planning should not double-book the same material across multiple experiments. |
-| UR-05 | OBJ-01 / OBJ-04 | As a lab operator, I need reservations to be released, consumed, or adjusted when the related workflow step is completed, cancelled, or changed. | Reserved stock should stay accurate as lab plans change. |
-Then renumber the remaining URs.
-
-I would not bring back OBJ-07. Reusable target proteins are important, but they are a strong example under material behavior + reservation, not a top-level objective.
-
-
-Yes. Add this as a target protein sharing requirement, not a separate objective.
-
-Best changes:
-
-| UR-06 | OBJ-02 / OBJ-05 | As a lab planner, I need target proteins to be shareable across projects when there is enough usable stock after existing reservations. | Target proteins are expensive and often relevant to multiple projects, so the system should avoid unnecessary reordering. |
-| UR-07 | OBJ-02 / OBJ-05 | As a lab planner, I need reservations to reserve only the required quantity, not block the entire target protein stock item by default. | A reserved target protein tube may still contain enough remaining volume for another project. |
-And adjust this one:
-
-| UR-05 | OBJ-02 | As a lab planner, I need reusable materials, especially target proteins, to show remaining usable, reserved, and free stock across projects. | Expensive shared materials should not be reordered when enough stock already exists or can still be shared safely. |
-Also update OBJ-05 slightly:
-
-| OBJ-05 | Check if planned lab work can be completed. | The lab needs to know before starting whether enough usable and unreserved stock exists, including possible QC re-runs, while still allowing reusable materials to be shared when enough quantity remains. | The system can answer whether a planned task or experiment has enough viable material available without double-booking the same reserved quantity. |
-
-ok give full md aagain
-
-# Inventory Management — Project Goal
 
 ## Goal
 
@@ -200,3 +107,9 @@ Assessment only checks whether the **entities** can support the requirement in t
 | UR-17 | OBJ-06 | Covered in principle | All domain entities | The model is domain-based, not only CRUD-shaped, so APIs can be built around inventory, location, reservation, and feasibility questions. |
 | UR-18 | OBJ-06 | Covered | `PurchaseOrder`, `PurchaseOrderLine`, `InventoryLot`, `InventoryReservation`, `InventoryTransaction`, `StorageLocation`, `WorkflowStepRun` | The model has entities for receiving stock, reserving stock, releasing/resolving reservations, recording consumption, locating inventory, and checking planned work. |
 
+
+
+## Expansions
+
+
+## System Thougths

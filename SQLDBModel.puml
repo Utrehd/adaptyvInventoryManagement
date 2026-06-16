@@ -37,15 +37,22 @@ package "Inventory" #F7D6FD {
         created_at : timestamp
     }
 
+    entity "inventory_event" as inventory_event #F2C6FA {
+        * id : uuid <<PK>>
+        --
+        event_type : text
+        purchase_order_line_id : uuid <<FK, nullable>>
+        workflow_step_run_id : uuid <<FK, nullable>>
+        reason : text
+        created_at : timestamp
+    }
+
     entity "inventory_lot" as inventory_lot #F2C6FA {
         * id : uuid <<PK>>
         --
         * material_id : uuid <<FK>>
         project_id : uuid <<FK, nullable>>
         container_position_id : uuid <<FK, nullable>>
-        purchase_order_line_id : uuid <<FK, nullable>>
-        source_inventory_lot_id : uuid <<FK, nullable>>
-        created_by_workflow_step_run_id : uuid <<FK, nullable>>
         ownership_scope : text
         lot_code : text
         current_quantity : numeric
@@ -76,15 +83,13 @@ package "Inventory" #F7D6FD {
     entity "inventory_transaction" as inventory_transaction #F2C6FA {
         * id : uuid <<PK>>
         --
+        * inventory_event_id : uuid <<FK>>
         * inventory_lot_id : uuid <<FK>>
-        workflow_step_run_id : uuid <<FK, nullable>>
         reservation_id : uuid <<FK, nullable>>
-        transaction_type : text
         quantity_delta : numeric
         unit : text
-        source_container_position_id : uuid <<FK, nullable>>
-        target_container_position_id : uuid <<FK, nullable>>
-        reason : text
+        from_container_position_id : uuid <<FK, nullable>>
+        to_container_position_id : uuid <<FK, nullable>>
         created_at : timestamp
     }
 }
@@ -289,24 +294,24 @@ package "Workflow Execution" #FFCFBB {
 ' Inventory relationships
 material ||--o{ material_metadata : has
 material ||--o{ inventory_lot : stocked as
+inventory_event ||--o{ inventory_transaction : contains
 inventory_lot ||--o{ inventory_transaction : changes through
 inventory_lot ||--o{ inventory_reservation : reserved by
-inventory_lot ||--o{ inventory_lot : derived from
-inventory_reservation ||--o{ inventory_transaction : resolved by
+inventory_reservation ||--o{ inventory_transaction : fulfilled by
 
 ' Storage relationships
 storage_location ||--o{ storage_location : contains
 storage_location ||--o{ container : stores
 container ||--|{ container_position : has positions
 container_position ||--o{ inventory_lot : holds
-container_position ||--o{ inventory_transaction : source
-container_position ||--o{ inventory_transaction : target
+container_position ||--o{ inventory_transaction : from
+container_position ||--o{ inventory_transaction : to
 
 ' Supply relationships
 supplier ||--o{ purchase_order : receives
 purchase_order ||--|{ purchase_order_line : has lines
 material ||--o{ purchase_order_line : ordered as
-purchase_order_line ||--o{ inventory_lot : creates stock
+purchase_order_line ||--o{ inventory_event : received through
 
 ' Recipe relationships
 recipe ||--|{ recipe_step : has steps
@@ -328,7 +333,7 @@ recipe_step ||--o{ workflow_step_run : executed as
 
 ' Workflow / inventory bridge
 workflow_step_run ||--o{ inventory_reservation : reserves
-workflow_step_run ||--o{ inventory_transaction : records
+workflow_step_run ||--o{ inventory_event : causes
 experiment ||--o{ inventory_reservation : planned stock
 
 @enduml

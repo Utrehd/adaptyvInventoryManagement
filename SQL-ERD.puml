@@ -1,0 +1,443 @@
+@startuml
+title Inventory Management - SQL Database ERD
+
+hide circle
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam nodesep 85
+skinparam ranksep 85
+skinparam padding 4
+skinparam ArrowColor #4A5A73
+skinparam ArrowThickness 2
+skinparam defaultTextAlignment left
+
+skinparam packageBorderColor #9AA8BC
+skinparam packageFontColor #24324B
+skinparam packageFontStyle bold
+skinparam packageFontSize 13
+
+skinparam entityBorderColor #5B6B82
+skinparam entityFontColor #1F2A44
+skinparam entityBackgroundColor #FFFFFF
+
+skinparam noteBackgroundColor #F8FAFC
+skinparam noteBorderColor #B8C2D1
+skinparam noteFontColor #3A475C
+
+top to bottom direction
+
+package "Inventory" #F7D6FD {
+
+    entity "material_type_policy" as material_type_policy #F2C6FA {
+        * id : uuid <<PK>>
+        --
+        material_type : text <<UNIQUE>>
+        is_reusable : boolean
+        is_project_specific : boolean
+        is_ordered : boolean
+        is_produced_in_house : boolean
+        requires_concentration : boolean
+        requires_expiry : boolean
+        default_expiry_days : integer <<nullable>>
+        default_storage_condition : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "material" as material #F2C6FA {
+        * id : uuid <<PK>>
+        --
+        * material_type_policy_id : uuid <<FK>>
+        name : text
+        default_unit : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "material_metadata" as material_metadata #F2C6FA {
+        * id : uuid <<PK>>
+        --
+        * material_id : uuid <<FK>>
+        metadata_key : text
+        metadata_value : text
+        created_at : timestamp
+    }
+
+    entity "inventory_event" as inventory_event #F2C6FA {
+        * id : uuid <<PK>>
+        --
+        event_type : text
+        purchase_order_line_id : uuid <<FK, nullable>>
+        workflow_step_run_id : uuid <<FK, nullable>>
+        reason : text
+        created_at : timestamp
+    }
+
+    entity "inventory_lot" as inventory_lot #F2C6FA {
+        * id : uuid <<PK>>
+        --
+        * material_id : uuid <<FK>>
+        project_id : uuid <<FK, nullable>>
+        container_position_id : uuid <<FK, nullable>>
+        ownership_scope : text
+        lot_code : text
+        current_quantity : numeric
+        unit : text
+        concentration : numeric
+        concentration_unit : text
+        status : text
+        expires_at : date
+        received_at : timestamp
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "inventory_reservation" as inventory_reservation #F2C6FA {
+        * id : uuid <<PK>>
+        --
+        * inventory_lot_id : uuid <<FK>>
+        workflow_step_run_id : uuid <<FK, nullable>>
+        experiment_id : uuid <<FK, nullable>>
+        reserved_quantity : numeric
+        unit : text
+        status : text
+        expires_at : timestamp
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "inventory_transaction" as inventory_transaction #F2C6FA {
+        * id : uuid <<PK>>
+        --
+        * inventory_event_id : uuid <<FK>>
+        * inventory_lot_id : uuid <<FK>>
+        reservation_id : uuid <<FK, nullable>>
+        quantity_delta : numeric
+        unit : text
+        from_container_position_id : uuid <<FK, nullable>>
+        to_container_position_id : uuid <<FK, nullable>>
+        created_at : timestamp
+    }
+}
+
+package "Storage" #EEF6FF {
+
+    entity "storage_location" as storage_location #8BA7E2 {
+        * id : uuid <<PK>>
+        --
+        parent_location_id : uuid <<FK, nullable>>
+        name : text
+        location_type : text
+        status : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "container" as container #8BA7E2 {
+        * id : uuid <<PK>>
+        --
+        * storage_location_id : uuid <<FK>>
+        barcode : text
+        name : text
+        container_type : text
+        status : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "container_position" as container_position #8BA7E2 {
+        * id : uuid <<PK>>
+        --
+        * container_id : uuid <<FK>>
+        position_code : text
+        row_label : text
+        column_label : text
+        created_at : timestamp
+    }
+}
+
+package "Supply" #8ADFC5 {
+
+    entity "supplier" as supplier #45CEA5 {
+        * id : uuid <<PK>>
+        --
+        name : text
+        supplier_code : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "purchase_order" as purchase_order #45CEA5 {
+        * id : uuid <<PK>>
+        --
+        * supplier_id : uuid <<FK>>
+        order_number : text
+        status : text
+        ordered_at : timestamp
+        expected_at : timestamp
+        received_at : timestamp
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "purchase_order_line" as purchase_order_line #45CEA5 {
+        * id : uuid <<PK>>
+        --
+        * purchase_order_id : uuid <<FK>>
+        * material_id : uuid <<FK>>
+        supplier_sku : text
+        ordered_quantity : numeric
+        received_quantity : numeric
+        unit : text
+        status : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+}
+
+package "Recipes" #FFF7ED {
+
+    entity "recipe" as recipe #F3DCC0 {
+        * id : uuid <<PK>>
+        --
+        name : text
+        workflow_type : text
+        version : integer
+        is_active : boolean
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "recipe_step" as recipe_step #F3DCC0 {
+        * id : uuid <<PK>>
+        --
+        * recipe_id : uuid <<FK>>
+        name : text
+        step_key : text
+        step_order : integer
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "recipe_step_dependency" as recipe_step_dependency #F3DCC0 {
+        * id : uuid <<PK>>
+        --
+        * predecessor_recipe_step_id : uuid <<FK>>
+        * successor_recipe_step_id : uuid <<FK>>
+        created_at : timestamp
+    }
+
+    entity "recipe_step_input" as recipe_step_input #F3DCC0 {
+        * id : uuid <<PK>>
+        --
+        * recipe_step_id : uuid <<FK>>
+        * material_id : uuid <<FK>>
+        required_quantity : numeric
+        unit : text
+        min_concentration : numeric
+        concentration_unit : text
+        is_consumed : boolean
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "recipe_step_output" as recipe_step_output #F3DCC0 {
+        * id : uuid <<PK>>
+        --
+        * recipe_step_id : uuid <<FK>>
+        * material_id : uuid <<FK>>
+        expected_quantity : numeric
+        unit : text
+        expected_container_type : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+}
+
+package "Workflow Execution" #FFCFBB {
+
+    entity "customer" as customer #FDB294 {
+        * id : uuid <<PK>>
+        --
+        name : text
+        external_reference : text
+        status : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "project" as project #FDB294 {
+        * id : uuid <<PK>>
+        --
+        * customer_id : uuid <<FK>>
+        name : text
+        status : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "experiment" as experiment #FDB294 {
+        * id : uuid <<PK>>
+        --
+        * project_id : uuid <<FK>>
+        name : text
+        experiment_type : text
+        status : text
+        planned_at : timestamp
+        started_at : timestamp
+        completed_at : timestamp
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "workflow_run" as workflow_run #FDB294 {
+        * id : uuid <<PK>>
+        --
+        * experiment_id : uuid <<FK>>
+        * recipe_id : uuid <<FK>>
+        run_number : integer
+        status : text
+        planned_rerun_count : integer
+        started_at : timestamp
+        completed_at : timestamp
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "workflow_step_run" as workflow_step_run #FDB294 {
+        * id : uuid <<PK>>
+        --
+        * workflow_run_id : uuid <<FK>>
+        * recipe_step_id : uuid <<FK>>
+        status : text
+        started_at : timestamp
+        completed_at : timestamp
+        created_at : timestamp
+        updated_at : timestamp
+    }
+}
+
+package "Identity & Compliance" #E8E8E8 {
+
+    entity "user_identity" as user_identity #D9D9D9 {
+        * id : uuid <<PK>>
+        --
+        iam_subject_id : text
+        iam_provider : text
+        status : text
+        created_at : timestamp
+        updated_at : timestamp
+    }
+
+    entity "access_role" as access_role #D9D9D9 {
+        * id : uuid <<PK>>
+        --
+        role_key : text
+        description : text
+        created_at : timestamp
+    }
+
+    entity "user_role_assignment" as user_role_assignment #D9D9D9 {
+        * id : uuid <<PK>>
+        --
+        * user_identity_id : uuid <<FK>>
+        * access_role_id : uuid <<FK>>
+        assigned_at : timestamp
+        revoked_at : timestamp
+    }
+
+    entity "audit_entry" as audit_entry #D9D9D9 {
+        * id : uuid <<PK>>
+        --
+        * actor_user_identity_id : uuid <<FK>>
+        target_record_type : text
+        target_record_id : uuid
+        action_type : text
+        change_summary : text
+        created_at : timestamp
+    }
+
+    entity "approval_record" as approval_record #D9D9D9 {
+        * id : uuid <<PK>>
+        --
+        * actor_user_identity_id : uuid <<FK>>
+        target_record_type : text
+        target_record_id : uuid
+        approval_type : text
+        status : text
+        comment : text
+        signed_at : timestamp
+    }
+}
+
+' Inventory relationships
+material_type_policy ||--o{ material : defines handling rules
+material ||--o{ material_metadata : has
+material ||--o{ inventory_lot : stocked as
+inventory_event ||--o{ inventory_transaction : contains
+inventory_lot ||--o{ inventory_transaction : changes through
+inventory_lot ||--o{ inventory_reservation : reserved by
+inventory_reservation ||--o{ inventory_transaction : fulfilled by
+
+' Storage relationships
+storage_location ||--o{ storage_location : contains
+storage_location ||--o{ container : stores
+container ||--|{ container_position : has positions
+container_position ||--o{ inventory_lot : holds
+container_position ||--o{ inventory_transaction : from
+container_position ||--o{ inventory_transaction : to
+
+' Supply relationships
+supplier ||--o{ purchase_order : receives
+purchase_order ||--|{ purchase_order_line : has lines
+material ||--o{ purchase_order_line : ordered as
+purchase_order_line ||--o{ inventory_event : received through
+
+' Recipe relationships
+recipe ||--|{ recipe_step : has steps
+recipe_step ||--o{ recipe_step_dependency : predecessor
+recipe_step ||--o{ recipe_step_dependency : successor
+recipe_step ||--o{ recipe_step_input : requires
+recipe_step ||--o{ recipe_step_output : creates
+material ||--o{ recipe_step_input : input material
+material ||--o{ recipe_step_output : output material
+
+' Workflow relationships
+customer ||--o{ project : owns
+project ||--o{ experiment : owns
+project ||--o{ inventory_lot : owns project stock
+experiment ||--o{ workflow_run : runs
+recipe ||--o{ workflow_run : executed as
+workflow_run ||--|{ workflow_step_run : contains
+recipe_step ||--o{ workflow_step_run : executed as
+
+' Workflow / inventory bridge
+workflow_step_run ||--o{ inventory_reservation : reserves
+workflow_step_run ||--o{ inventory_event : causes
+experiment ||--o{ inventory_reservation : planned stock
+
+' Identity & compliance relationships
+user_identity ||--o{ user_role_assignment : assigned
+access_role ||--o{ user_role_assignment : grants
+user_identity ||--o{ audit_entry : performed by
+user_identity ||--o{ approval_record : signed by
+
+' Logical target links via target_record_type + target_record_id
+audit_entry .. inventory_lot
+audit_entry .. inventory_event
+audit_entry .. inventory_reservation
+audit_entry .. workflow_run
+audit_entry .. workflow_step_run
+audit_entry .. recipe
+audit_entry .. purchase_order
+audit_entry .. purchase_order_line
+
+approval_record .. inventory_event
+approval_record .. workflow_run
+approval_record .. recipe
+approval_record .. purchase_order
+
+@enduml

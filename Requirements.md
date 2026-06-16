@@ -4,7 +4,6 @@
 - The system is the operational source of truth for current inventory state, but not for supplier management, purchasing approvals, or finance workflows.
 - Integrations with LIMS, ELN, robotics, or procurement systems are out of scope.
 - The system should be designed to be GxP-ready if Adaptyv later offers it in a regulated setting. Thus, the design should not block future support for auditability, traceability, controlled changes, user accountability, record integrity, electronic records, and validation-oriented workflows required under frameworks such as FDA, EU GMP, GLP, GCP, and related standards.
-- A privilege system is out of scope.
 
 
 ## Goal
@@ -54,38 +53,6 @@ This is not just a stock-counting problem. The lab uses different material types
 | UR-21 | OBJ-07 | As a QA or compliance user, I need a secure, time-stamped audit trail for critical actions that shows who performed the action, when it happened, what record was affected, and what changed. | Critical record changes must remain traceable and reviewable over time. |
 | UR-22 | OBJ-07 | As a QA or compliance user, I need approval and sign-off actions to be attributable to a specific user and linked to the affected record, so the design can support stronger electronic signature controls later without major redesign. | GxP-ready systems should not block future Part 11-style approval controls. |
 
-DataModel.puml
-File
-now look at this data model and make a data model asseseemtn for each user requirment
-
-table 
-
-
-I’ll inspect the PUML model and map each user requirement to what the model already supports, what is weak, and what should be adjusted.
-
-Thought for 18s
-## Data Model Assessment By User Requirement
-
-| ID | Linked Objective | Assessment | What The Model Supports | Gap / Adjustment Needed |
-|---|---|---|---|---|
-| UR-01 | OBJ-01 | Partial | `Material` and `InventoryLot` support tracking stock by material. | Add explicit lot fields: `current_quantity`, `unit`, `concentration`, `status`, `expiry_date`, and `usable_quantity`. |
-| UR-02 | OBJ-01 | Partial | `InventoryReservation` exists and links to `InventoryLot` and `WorkflowStepRun`. | Add reservation quantity and status so free stock can be calculated as `current_quantity - active_reserved_quantity`. |
-| UR-03 | OBJ-01 | Partial | `InventoryLot` can represent real stock and `InventoryTransaction` can change it. | Add clear inventory statuses: `available`, `reserved`, `expired`, `depleted`, `discarded`, `quarantined`. |
-| UR-04 | OBJ-02 | Partial | `Material` plus `MaterialMetadata` supports type-specific material details. | Add `material_type` on `Material` and structured metadata rules per type. Avoid putting everything into generic metadata only. |
-| UR-05 | OBJ-02 | Partial | `Project ||--o{ InventoryLot` allows project-owned stock. Target proteins can be modeled as reusable lots. | Target proteins should not be tightly owned by one project only. Add nullable `project_id` or sharing scope like `project_specific`, `shared`, `global`. |
-| UR-06 | OBJ-02 / OBJ-05 | Partial | The model can share target proteins if one `InventoryLot` is used by multiple reservations. | Make this explicit with reusable material rules and quantity-based reservations. Do not block the whole lot when only part of the target protein is reserved. |
-| UR-07 | OBJ-02 / OBJ-05 | Partial | `InventoryReservation` exists at lot level. | Add `reserved_quantity`, `unit`, `reservation_status`, and maybe `expires_at`. Reservation must be quantity-based, not lot-lock based. |
-| UR-08 | OBJ-03 | Covered | `StorageLocation`, `Container`, `ContainerPosition`, and `InventoryLot` give a clear physical storage chain. | Add display fields like freezer name, rack, box, plate barcode, well position, and human-readable location path. |
-| UR-09 | OBJ-03 | Covered | Recursive `StorageLocation`, plus `Container` and `ContainerPosition`, supports nested storage. | Define allowed container types: tube, bottle, plate, supplier package, freezer box, rack, shelf. |
-| UR-10 | OBJ-04 | Partial | `InventoryTransaction` supports received, consumed, transferred, created, discarded, and adjusted changes. | Add transaction type enum including `reserved` and `released`, or keep reservations separate but link reservation lifecycle to transactions. |
-| UR-11 | OBJ-04 | Partial | `InventoryTransaction` can record partial consumption against an `InventoryLot`. | Add transaction quantity fields and enforce that partial consumption cannot reduce below reserved or available stock rules. |
-| UR-12 | OBJ-04 | Partial | `InventoryReservation` links stock to workflow execution. | Add reservation lifecycle: `active`, `partially_consumed`, `consumed`, `released`, `cancelled`, `expired`. |
-| UR-13 | OBJ-04 | Partial | `WorkflowStepRun ||--o{ InventoryReservation` and `InventoryLot ||--o{ InventoryTransaction` connect inventory to execution. | `InventoryTransaction` should link directly to `WorkflowStepRun`, `Experiment`, and possibly `WorkflowRun` for audit clarity. |
-| UR-14 | OBJ-05 | Partial | `RecipeStepInput`, `WorkflowRun`, `WorkflowStepRun`, `InventoryLot`, and `InventoryReservation` are the right foundation for feasibility checks. | Need explicit required quantity, available quantity, reserved quantity, expiry, and material matching rules. |
-| UR-15 | OBJ-05 | Partial | `WorkflowRun` can represent planned retries or reruns. | Add `planned_rerun_count` or planning assumptions so feasibility checks can include expected QC re-runs. |
-| UR-16 | OBJ-05 | Partial | The model has enough entities to identify missing stock by material and lot. | Add feasibility result concept or view that reports blockers: missing, expired, reserved, wrong concentration, wrong location, depleted. |
-| UR-17 | OBJ-06 | Partial | The model is organized around domain concepts, not only CRUD tables. | Add read models/views for frontend queries: inventory overview, material detail, location lookup, feasibility result, reservation summary. |
-| UR-18 | OBJ-06 | Partial | The model supports receiving, reserving, releasing, consuming, locating, and feasibility in concept. | Make write paths explicit through transaction and reservation rules so APIs can safely update stock without double-booking. |
 
 ## Data Model Assessment By User Requirement
 
@@ -111,10 +78,7 @@ Assessment only checks whether the **entities** can support the requirement in t
 | UR-16 | OBJ-05 | Covered in principle | `RecipeStepInput`, `Material`, `InventoryLot`, `InventoryReservation`, `StorageLocation` | The model has the entities needed to identify whether a blocker comes from missing stock, reserved stock, expired stock, or location issues. |
 | UR-17 | OBJ-06 | Covered in principle | All domain entities | The model is domain-based, not only CRUD-shaped, so APIs can be built around inventory, location, reservation, and feasibility questions. |
 | UR-18 | OBJ-06 | Covered | `PurchaseOrder`, `PurchaseOrderLine`, `InventoryLot`, `InventoryReservation`, `InventoryTransaction`, `StorageLocation`, `WorkflowStepRun` | The model has entities for receiving stock, reserving stock, releasing/resolving reservations, recording consumption, locating inventory, and checking planned work. |
-
-
-
-## Expansions
-
-
-## System Thougths
+| UR-19 | OBJ-07 | Covered | `UserIdentity`, `AuditEntry`, `ApprovalRecord` | The model ties critical actions and sign-off records to a unique user identity, which supports attributable user traceability. |
+| UR-20 | OBJ-07 | Covered in principle | `UserIdentity`, `AccessRole`, `UserRoleAssignment` | The model includes a minimal IAM-backed identity and role structure that can represent authenticated users and role-based access control. |
+| UR-21 | OBJ-07 | Covered | `AuditEntry`, `UserIdentity`, `InventoryLot`, `InventoryEvent`, `InventoryReservation`, `WorkflowRun`, `WorkflowStepRun`, `Recipe`, `PurchaseOrder`, `PurchaseOrderLine` | The model includes a dedicated audit trail entity linked to user identity and to the core controlled records that need traceability. |
+| UR-22 | OBJ-07 | Covered | `ApprovalRecord`, `UserIdentity`, `InventoryEvent`, `WorkflowRun`, `Recipe`, `PurchaseOrder` | The model includes a dedicated approval/sign-off entity linked to a specific user and to the main records that may require formal review or approval. |

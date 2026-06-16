@@ -207,18 +207,18 @@ AccessRole ||--o{ UserRoleAssignment : grants
 UserIdentity ||--o{ AuditEntry : performed by
 UserIdentity ||--o{ ApprovalRecord : signs off
 
-InventoryLot ||--o{ AuditEntry : audited by
-InventoryEvent ||--o{ AuditEntry : audited by
-InventoryReservation ||--o{ AuditEntry : audited by
-WorkflowRun ||--o{ AuditEntry : audited by
-WorkflowStepRun ||--o{ AuditEntry : audited by
-Recipe ||--o{ AuditEntry : audited by
-PurchaseOrder ||--o{ AuditEntry : audited by
-PurchaseOrderLine ||--o{ AuditEntry : audited by
+InventoryLot .. AuditEntry : audited by
+InventoryEvent .. AuditEntry : audited by
+InventoryReservation .. AuditEntry : audited by
+WorkflowRun .. AuditEntry : audited by
+WorkflowStepRun .. AuditEntry : audited by
+Recipe .. AuditEntry : audited by
+PurchaseOrder .. AuditEntry : audited by
+PurchaseOrderLine .. AuditEntry : audited by
 
-InventoryEvent ||--o{ ApprovalRecord : approved by
-WorkflowRun ||--o{ ApprovalRecord : approved by
-Recipe ||--o{ ApprovalRecord : approved by
-PurchaseOrder ||--o{ ApprovalRecord : approved by
+InventoryEvent .. ApprovalRecord : approved by
+WorkflowRun ..{ ApprovalRecord : approved by
+Recipe .. ApprovalRecord : approved by
+PurchaseOrder .. ApprovalRecord : approved by
 
 @enduml

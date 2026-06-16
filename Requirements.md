@@ -1,4 +1,4 @@
-# Inventory Management — Project Adaptivy
+# Inventory Management — Project Adaptvy
 
 ## Assumptions
 - The system is the operational source of truth for current inventory state, but not for supplier management, purchasing approvals, or finance workflows.

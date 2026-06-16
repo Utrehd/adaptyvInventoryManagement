@@ -100,30 +100,42 @@ package "Workflow Execution" #ffcfbb {
 }
 
 package "Inventory" #f7d6fd {
+  entity MaterialTypePolicy #f2c6fa {
+    Defines handling behavior for a material type,
+    such as reusable, project-specific, ordered,
+    produced in-house, concentration-required,
+    expiry-required, or single-use.
+  }
+
   entity Material #f2c6fa {
     Abstract definition of a material, such as DNA, 
     target protein, buffer, or consumable.
   }
+
   entity MaterialMetadata #f2c6fa {
     Type-specific details for a material, 
     such as DNA sequence, protein target, 
     buffer recipe, or supplier SKU.
   }
+
   entity InventoryEvent #f2c6fa {
     Represents one real-world inventory action.
     Groups one or more InventoryTransactions
     under a single cause.
   }
+
   entity InventoryLot #f2c6fa {
     One physically tracked quantity of a Material.
     Usually tied to one container position,
     lot, expiry, concentration, and location.
   }
+
   entity InventoryTransaction #f2c6fa {
     Audit log of inventory changes, 
     such as received, consumed, transferred, 
     created, discarded, or adjusted.
   }
+
   entity InventoryReservation #f2c6fa {
     Planned hold on inventory for future 
     workflow execution or expected QC reruns.
@@ -179,6 +191,7 @@ Customer ||--o{ Project
 WorkflowRun ||--|{ WorkflowStepRun : contains
 RecipeStep ||--o{ WorkflowStepRun : executed as
 
+MaterialTypePolicy ||--o{ Material : defines handling rules
 Material ||--o{ MaterialMetadata
 Material ||--o{ InventoryLot
 

@@ -6,11 +6,27 @@ skinparam linetype ortho
 skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 skinparam shadowing false
-skinparam nodesep 70
-skinparam ranksep 70
-skinparam padding 2
-skinparam ArrowColor #002457
+skinparam roundCorner 10
+skinparam nodesep 85
+skinparam ranksep 85
+skinparam padding 4
+skinparam ArrowColor #4A5A73
 skinparam ArrowThickness 2
+skinparam defaultTextAlignment left
+
+skinparam packageBorderColor #9AA8BC
+skinparam packageFontColor #24324B
+skinparam packageFontStyle bold
+skinparam packageFontSize 13
+
+skinparam entityBorderColor #5B6B82
+skinparam entityFontColor #1F2A44
+skinparam entityBackgroundColor #FFFFFF
+
+skinparam noteBackgroundColor #F8FAFC
+skinparam noteBorderColor #B8C2D1
+skinparam noteFontColor #3A475C
+
 top to bottom direction
 
 package "Inventory" #F7D6FD {
@@ -389,10 +405,25 @@ workflow_step_run ||--o{ inventory_reservation : reserves
 workflow_step_run ||--o{ inventory_event : causes
 experiment ||--o{ inventory_reservation : planned stock
 
-' identity & compliance relationships
+' Identity & compliance relationships
 user_identity ||--o{ user_role_assignment : assigned
 access_role ||--o{ user_role_assignment : grants
 user_identity ||--o{ audit_entry : performed by
 user_identity ||--o{ approval_record : signed by
+
+' Logical target links via target_record_type + target_record_id
+audit_entry .. inventory_lot
+audit_entry .. inventory_event
+audit_entry .. inventory_reservation
+audit_entry .. workflow_run
+audit_entry .. workflow_step_run
+audit_entry .. recipe
+audit_entry .. purchase_order
+audit_entry .. purchase_order_line
+
+approval_record .. inventory_event
+approval_record .. workflow_run
+approval_record .. recipe
+approval_record .. purchase_order
 
 @enduml

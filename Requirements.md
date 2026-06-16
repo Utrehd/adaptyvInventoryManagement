@@ -4,6 +4,7 @@
 - The system is the operational source of truth for current inventory state, but not for supplier management, purchasing approvals, or finance workflows.
 - Integrations with LIMS, ELN, robotics, or procurement systems are out of scope.
 - The system should be designed to be GxP-ready if Adaptyv later offers it in a regulated setting. Thus, the design should not block future support for auditability, traceability, controlled changes, user accountability, record integrity, electronic records, and validation-oriented workflows required under frameworks such as FDA, EU GMP, GLP, GCP, and related standards.
+- A privilege system is out of scope.
 
 
 ## Goal

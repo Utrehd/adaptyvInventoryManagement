@@ -143,6 +143,11 @@ package "Identity & Compliance" #E8E8E8 {
     a user may perform.
   }
 
+  entity UserRoleAssignment #d9d9d9 {
+    Assignment of a system role
+    to a specific user identity.
+  }
+
   entity AuditEntry #d9d9d9 {
     Immutable, time-stamped audit trail record
     for critical actions on controlled records.
@@ -180,6 +185,7 @@ Material ||--o{ InventoryLot
 InventoryEvent ||--o{ InventoryTransaction : contains
 InventoryLot ||--o{ InventoryTransaction
 InventoryReservation ||--o{ InventoryTransaction : fulfilled by
+InventoryLot ||--o{ InventoryReservation
 InventoryLot ||--o{ InventoryLot : derived_from
 
 StorageLocation ||--o{ StorageLocation : contains
@@ -196,17 +202,23 @@ PurchaseOrder ||--o{ PurchaseOrderLine
 Material ||--o{ PurchaseOrderLine
 PurchaseOrderLine ||--o{ InventoryEvent
 
-UserIdentity }o--o{ AccessRole : assigned roles
+UserIdentity ||--o{ UserRoleAssignment : assigned
+AccessRole ||--o{ UserRoleAssignment : grants
 UserIdentity ||--o{ AuditEntry : performed by
 UserIdentity ||--o{ ApprovalRecord : signs off
 
+InventoryLot ||--o{ AuditEntry : audited by
 InventoryEvent ||--o{ AuditEntry : audited by
 InventoryReservation ||--o{ AuditEntry : audited by
 WorkflowRun ||--o{ AuditEntry : audited by
-Recipe ||--o{ AuditEntry : changes audited by
+WorkflowStepRun ||--o{ AuditEntry : audited by
+Recipe ||--o{ AuditEntry : audited by
+PurchaseOrder ||--o{ AuditEntry : audited by
+PurchaseOrderLine ||--o{ AuditEntry : audited by
 
 InventoryEvent ||--o{ ApprovalRecord : approved by
-WorkflowRun ||--o{ ApprovalRecord : reviewed by
+WorkflowRun ||--o{ ApprovalRecord : approved by
 Recipe ||--o{ ApprovalRecord : approved by
+PurchaseOrder ||--o{ ApprovalRecord : approved by
 
 @enduml

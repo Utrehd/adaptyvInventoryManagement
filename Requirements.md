@@ -24,6 +24,7 @@ This is not just a stock-counting problem. The lab uses different material types
 | OBJ-04 | Record inventory movement and consumption. | Lab workflows partially consume, create, transfer, reserve, release, and discard materials. | Each inventory change records what changed, how much, from where, why, for which workflow step, and when. |
 | OBJ-05 | Check if planned lab work can be completed. | The lab needs to know before starting whether enough usable and unreserved stock exists, including possible QC re-runs, while still allowing reusable materials to be shared when enough quantity remains. | The system can answer whether a planned task or experiment has enough viable material available without double-booking the same reserved quantity. |
 | OBJ-06 | Expose practical APIs for lab operations. | The frontend and other services need domain-level answers, not only raw database records. | API calls support inventory lookup, material location, expiry checks, feasibility checks, reservations, receiving stock, and recording consumption. |
+| OBJ-07 | Ensure user traceability, controlled access, and GxP-ready auditability. | A regulated-ready system must attribute critical actions to specific users, restrict access by role, and preserve a reliable audit history. | All critical inventory and workflow actions can be tied to a unique user identity, controlled through IAM-based access rules, and recorded in a time-stamped audit trail. |
 
 ## User Requirements
 
@@ -47,7 +48,10 @@ This is not just a stock-counting problem. The lab uses different material types
 | UR-16 | OBJ-05 | As a lab planner, I need the system to show which material blocks a task if stock is missing, reserved, or expired. | The user needs an actionable reason, not only a failed check. |
 | UR-17 | OBJ-06 | As a frontend user, I need APIs that answer inventory questions directly. | The frontend should not rebuild lab logic from raw database tables. |
 | UR-18 | OBJ-06 | As another lab service, I need APIs to receive stock, reserve material, release reservations, record consumption, locate materials, and check task feasibility. | Inventory will likely be used by workflow and automation systems, not only humans. |
-
+| UR-19 | OBJ-07 | As a QA or compliance user, I need every critical action to be attributable to a unique user identity, so actions cannot be performed through shared or anonymous accounts. | GxP-ready traceability depends on clear user attribution. |
+| UR-20 | OBJ-07 | As an IT or system administrator, I need the system to use IAM-based authentication and role-based access control, so only authorized users can view, create, modify, approve, or delete records. | Regulated-ready systems need controlled access by role and responsibility. |
+| UR-21 | OBJ-07 | As a QA or compliance user, I need a secure, time-stamped audit trail for critical actions that shows who performed the action, when it happened, what record was affected, and what changed. | Critical record changes must remain traceable and reviewable over time. |
+| UR-22 | OBJ-07 | As a QA or compliance user, I need approval and sign-off actions to be attributable to a specific user and linked to the affected record, so the design can support stronger electronic signature controls later without major redesign. | GxP-ready systems should not block future Part 11-style approval controls. |
 
 DataModel.puml
 File

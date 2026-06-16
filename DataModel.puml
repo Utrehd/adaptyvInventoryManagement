@@ -130,6 +130,31 @@ package "Inventory" #f7d6fd {
   }
 }
 
+package "Identity & Compliance" #E8E8E8 {
+  entity UserIdentity #d9d9d9 {
+    Unique local reference to an authenticated
+    user from external IAM/IMS.
+    Used for attributable actions and review.
+  }
+
+  entity AccessRole #d9d9d9 {
+    System role recognized from external IAM/IMS.
+    Controls which critical actions
+    a user may perform.
+  }
+
+  entity AuditEntry #d9d9d9 {
+    Immutable, time-stamped audit trail record
+    for critical actions on controlled records.
+  }
+
+  entity ApprovalRecord #d9d9d9 {
+    Attributable approval or sign-off on a
+    critical record.
+    Supports future e-signature controls.
+  }
+}
+
 Recipe ||--|{ RecipeStep : has steps
 RecipeStep ||--o{ RecipeStepDependency : predecessor
 RecipeStep ||--o{ RecipeStepDependency : successor
@@ -138,7 +163,6 @@ RecipeStep ||--o{ RecipeStepOutput : creates
 
 RecipeStepInput }o--|| Material : input material
 RecipeStepOutput }o--|| Material : output material
-
 
 Project ||--o{ Experiment
 Project ||--o{ InventoryLot
@@ -172,5 +196,18 @@ Supplier ||--o{ PurchaseOrder
 PurchaseOrder ||--o{ PurchaseOrderLine
 Material ||--o{ PurchaseOrderLine
 PurchaseOrderLine ||--o{ InventoryEvent
+
+UserIdentity }o--o{ AccessRole : assigned roles
+UserIdentity ||--o{ AuditEntry : performed by
+UserIdentity ||--o{ ApprovalRecord : signs off
+
+InventoryEvent ||--o{ AuditEntry : audited by
+InventoryReservation ||--o{ AuditEntry : audited by
+WorkflowRun ||--o{ AuditEntry : audited by
+Recipe ||--o{ AuditEntry : changes audited by
+
+InventoryEvent ||--o{ ApprovalRecord : approved by
+WorkflowRun ||--o{ ApprovalRecord : reviewed by
+Recipe ||--o{ ApprovalRecord : approved by
 
 @enduml
